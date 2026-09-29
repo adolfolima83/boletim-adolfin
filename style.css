@@ -1,0 +1,138 @@
+/* ===== RESET BÁSICO ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== CORPO DA PÁGINA (tema escuro) ===== */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0f172a; /* fundo escuro */
+  color: #e2e8f0;            /* texto claro */
+  line-height: 1.5;
+  padding: 16px;
+}
+
+/* ===== CABEÇALHO ===== */
+.cabecalho {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  border-bottom: 3px solid #3b82f6; /* azul principal */
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.cabecalho h1 {
+  font-size: 2rem;
+  color: #3b82f6; /* azul principal */
+  margin-bottom: 4px;
+}
+
+.subtitulo {
+  color: #22d3ee; /* ciano secundário */
+  font-size: 1rem;
+}
+
+/* ===== CARDS DE RESUMO ===== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background-color: #1e293b;
+  border-radius: 10px;
+  padding: 16px;
+  border-left: 6px solid #3b82f6; /* barra lateral azul (padrão) */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Variações de cor da barra lateral */
+.card.ciano   { border-left-color: #22d3ee; }
+.card.verde   { border-left-color: #22c55e; }
+.card.amarelo { border-left-color: #facc15; }
+.card.vermelho{ border-left-color: #ef4444; }
+
+.card .titulo-card {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.card .valor-card {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+.card .extra-card {
+  font-size: 0.8rem;
+  color: #22d3ee;
+  margin-top: 4px;
+}
+
+/* ===== TABELA ===== */
+.tabela-area h2 {
+  margin-bottom: 12px;
+  color: #22d3ee;
+  font-size: 1.2rem;
+}
+
+.tabela-responsiva {
+  overflow-x: auto; /* permite rolar no celular */
+  border-radius: 10px;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #1e293b;
+  min-width: 700px; /* garante leitura no celular com rolagem */
+}
+
+.tabela th,
+.tabela td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+  font-size: 0.9rem;
+}
+
+.tabela th {
+  background-color: #1e3a8a;
+  color: #e2e8f0;
+  position: sticky;
+  top: 0;
+}
+
+.tabela tbody tr:hover {
+  background-color: #273549;
+}
+
+/* Cores das situações */
+.situacao-bom      { color: #22c55e; font-weight: bold; }
+.situacao-atencao  { color: #ef4444; font-weight: bold; }
+.situacao-ausente  { color: #94a3b8; font-style: italic; }
+
+/* ===== RODAPÉ ===== */
+.rodape {
+  text-align: center;
+  margin-top: 32px;
+  padding: 16px;
+  font-size: 0.8rem;
+  color: #64748b;
+  border-top: 1px solid #334155;
+}
+
+/* ===== AJUSTES PARA CELULAR ===== */
+@media (max-width: 500px) {
+  .cabecalho h1 { font-size: 1.5rem; }
+  .card .valor-card { font-size: 1.3rem; }
+  .tabela th, .tabela td { padding: 8px; font-size: 0.8rem; }
+}
