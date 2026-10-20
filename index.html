@@ -16,33 +16,60 @@
 
   <main class="conteudo">
 
-    <!-- Área de cards de resumo -->
-    <section class="cards" id="cards">
-      <!-- Os cards serão criados pelo JavaScript -->
+    <!-- Área de login por PIN -->
+    <section id="area-login" class="area-login">
+      <h2>Acesso ao Boletim</h2>
+      <p class="info-aluno">Turma: <strong>9C</strong> | Chamada: <strong>37</strong></p>
+      <form id="form-login">
+        <div class="campo">
+          <label for="input-pin">PIN:</label>
+          <input type="password" id="input-pin" placeholder="Digite seu PIN" required autocomplete="off" />
+        </div>
+        <button type="submit" id="btn-entrar">Entrar</button>
+      </form>
+      <div id="mensagem-login" class="mensagem-status"></div>
     </section>
 
-    <!-- Área da tabela -->
-    <section class="tabela-area">
-      <h2>Notas por disciplina</h2>
-      <div class="tabela-responsiva">
-        <table class="tabela">
-          <thead>
-            <tr>
-              <th>Disciplina</th>
-              <th>1º Tri</th>
-              <th>2º Tri</th>
-              <th>3º Tri</th>
-              <th>Média</th>
-              <th>Faltas</th>
-              <th>Situação</th>
-            </tr>
-          </thead>
-          <tbody id="corpo-tabela">
-            <!-- As linhas serão criadas pelo JavaScript -->
-          </tbody>
-        </table>
+    <!-- Área de conteúdo do boletim (oculta antes de logar) -->
+    <div id="area-boletim" style="display: none;">
+      
+      <!-- Controles de edição -->
+      <div class="controles-boletim">
+        <button id="btn-alterar" type="button">Alterar dados</button>
+        <button id="btn-salvar" type="button" style="display: none;">Salvar alterações</button>
+        <button id="btn-cancelar" type="button" style="display: none;">Cancelar</button>
+        <span id="mensagem-boletim" class="mensagem-status"></span>
       </div>
-    </section>
+
+      <!-- Área de cards de resumo -->
+      <section class="cards" id="cards">
+        <!-- Os cards serão criados pelo JavaScript -->
+      </section>
+
+      <!-- Área da tabela -->
+      <section class="tabela-area">
+        <h2>Notas por disciplina</h2>
+        <div class="tabela-responsiva">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>Disciplina</th>
+                <th>1º Tri</th>
+                <th>2º Tri</th>
+                <th>3º Tri</th>
+                <th>Média</th>
+                <th>Faltas</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-tabela">
+              <!-- As linhas serão criadas pelo JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
 
   </main>
 
@@ -54,4 +81,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
