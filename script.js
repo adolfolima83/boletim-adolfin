@@ -35,6 +35,11 @@ const dadosLocais = [
 let dadosAtuais = [];
 let emEdicao = false;
 
+// Instâncias globais dos gráficos
+let graficoMedias = null;
+let graficoEvolucao = null;
+let graficoFaltas = null;
+
 // ======================================================
 // FUNÇÃO: normalizarNota(valor)
 // ======================================================
@@ -255,193 +260,44 @@ function renderizarTela() {
   criarCard("Bom desempenho", comBomDesempenho, "disciplinas", "verde");
   criarCard("Precisam de atenção", comAtencao, "disciplinas", "vermelho");
   criarCard("Frequência demonstrativa", frequenciaDemonstrativa + "%", "Frequência adequada", "ciano");
+
+  // Atualiza a camada visual dos gráficos
+  atualizarGraficos();
 }
 
 // ======================================================
-// LOGIN E CONEXÃO COM A API
+// CAMADA EXCLUSIVA DOS GRÁFICOS (SOMENTE LEITURA)
 // ======================================================
-const formLogin = document.getElementById("form-login");
-const inputPin = document.getElementById("input-pin");
-const mensagemLogin = document.getElementById("mensagem-login");
-const areaLogin = document.getElementById("area-login");
-const areaBoletim = document.getElementById("area-boletim");
+function atualizarGraficoMedias() {
+  const canvas = document.getElementById("graficoMediasDisciplinas");
+  if (!canvas) return;
 
-formLogin.addEventListener("submit", function (e) {
-  e.preventDefault();
-  const pinDigitado = inputPin.value.trim();
-
-  if (!pinDigitado) return;
-
-  mensagemLogin.className = "mensagem-status info";
-  mensagemLogin.textContent = "Conectando...";
-
-  fetch(CONFIG_ALUNO.apiUrl + "/api/v1/boletins/abrir", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      turma: CONFIG_ALUNO.turma,
-      numero_chamada: CONFIG_ALUNO.numeroChamada,
-      pin: pinDigitado
-    })
-  })
-    .then(function (resposta) {
-      if (resposta.status === 401) {
-        throw new Error("Turma, chamada ou PIN inválidos.");
-      }
-      if (resposta.status === 429) {
-        throw new Error("Muitas tentativas. Aguarde um minuto e tente novamente.");
-      }
-      if (!resposta.ok) {
-        throw new Error("Não foi possível conectar ao servidor. Tente novamente.");
-      }
-      return resposta.json();
-    })
-    .then(function (dadosRetornados) {
-      pinSessao = pinDigitado;
-      inputPin.value = ""; // Limpa por segurança
-
-      if (dadosRetornados && dadosRetornados.dados && Array.isArray(dadosRetornados.dados.disciplinas) && dadosRetornados.dados.disciplinas.length > 0) {
-        dadosAtuais = dadosRetornados.dados.disciplinas;
-      } else {
-        dadosAtuais = JSON.parse(JSON.stringify(dadosLocais));
-      }
-
-      areaLogin.style.display = "none";
-      areaBoletim.style.display = "block";
-      renderizarTela();
-    })
-    .catch(function (erro) {
-      mensagemLogin.className = "mensagem-status erro";
-      mensagemLogin.textContent = erro.message || "Não foi possível conectar ao servidor. Tente novamente.";
-    });
-});
-
-// ======================================================
-// CONTROLES DE EDIÇÃO E SALVAMENTO
-// ======================================================
-const btnAlterar = document.getElementById("btn-alterar");
-const btnSalvar = document.getElementById("btn-salvar");
-const btnCancelar = document.getElementById("btn-cancelar");
-const mensagemBoletim = document.getElementById("mensagem-boletim");
-
-btnAlterar.addEventListener("click", function () {
-  emEdicao = true;
-  btnAlterar.style.display = "none";
-  btnSalvar.style.display = "inline-block";
-  btnCancelar.style.display = "inline-block";
-  mensagemBoletim.textContent = "";
-  renderizarTela();
-});
-
-btnCancelar.addEventListener("click", function () {
-  emEdicao = false;
-  btnAlterar.style.display = "inline-block";
-  btnSalvar.style.display = "none";
-  btnCancelar.style.display = "none";
-  mensagemBoletim.textContent = "";
-  renderizarTela();
-});
-
-// Validação estrita para edição
-function validarNotaDigitada(str) {
-  if (str === "" || str === null || str === undefined) return { valida: true, valor: null };
-  const strNormal = str.replace(",", ".");
-  if (!/^\d+(\.\d+)?$/.test(strNormal)) return { valida: false };
-  const num = parseFloat(strNormal);
-  if (isNaN(num) || num < 0 || num > 10) return { valida: false };
-  return { valida: true, valor: num };
-}
-
-function validarFaltaDigitada(str) {
-  if (str === "" || str === null || str === undefined) return { valida: false };
-  if (!/^\d+$/.test(str.trim())) return { valida: false };
-  const num = parseInt(str.trim(), 10);
-  if (isNaN(num) || num < 0) return { valida: false };
-  return { valida: true, valor: num };
-}
-
-btnSalvar.addEventListener("click", function () {
-  let houverErro = false;
-  const novosDados = JSON.parse(JSON.stringify(dadosAtuais));
-
-  const inputsNota = document.querySelectorAll("input[data-campo]");
-  const inputsFalta = document.querySelectorAll("input[data-falta-index]");
-
-  // Limpa erros visuais anteriores
-  document.querySelectorAll(".input-invalido").forEach(function (el) {
-    el.classList.remove("input-invalido");
-  });
-
-  // Validar notas
-  inputsNota.forEach(function (input) {
-    const idx = parseInt(input.dataset.disc, 10);
-    const campo = input.dataset.campo;
-    const res = validarNotaDigitada(input.value.trim());
-
-    if (!res.valida) {
-      input.classList.add("input-invalido");
-      houverErro = true;
-    } else {
-      novosDados[idx][campo] = res.valor;
-    }
-  });
-
-  // Validar faltas
-  inputsFalta.forEach(function (input) {
-    const idx = parseInt(input.dataset.disc, 10);
-    const fIdx = parseInt(input.dataset.faltaIndex, 10);
-    const res = validarFaltaDigitada(input.value);
-
-    if (!res.valida) {
-      input.classList.add("input-invalido");
-      houverErro = true;
-    } else {
-      if (!Array.isArray(novosDados[idx].faltas)) {
-        novosDados[idx].faltas = [0, 0, 0];
-      }
-      novosDados[idx].faltas[fIdx] = res.valor;
-    }
-  });
-
-  if (houverErro) {
-    mensagemBoletim.className = "mensagem-status erro";
-    mensagemBoletim.textContent = "Existem valores inválidos. Verifique os campos destacados em vermelho.";
-    return;
+  if (graficoMedias) {
+    graficoMedias.destroy();
   }
 
-  mensagemBoletim.className = "mensagem-status info";
-  mensagemBoletim.textContent = "Salvando...";
+  const resultados = processarDados(dadosAtuais);
+  const labels = resultados.map(function (r) { return r.disciplina; });
+  const data = resultados.map(function (r) { return r.media; });
 
-  fetch(CONFIG_ALUNO.apiUrl + "/api/v1/boletins/salvar", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      turma: CONFIG_ALUNO.turma,
-      numero_chamada: CONFIG_ALUNO.numeroChamada,
-      pin: pinSessao,
-      dados: {
-        disciplinas: novosDados
-      }
-    })
-  })
-    .then(function (resposta) {
-      if (!resposta.ok) {
-        throw new Error("Erro ao salvar dados no servidor.");
-      }
-      return resposta.json();
-    })
-    .then(function () {
-      dadosAtuais = novosDados;
-      emEdicao = false;
-      btnAlterar.style.display = "inline-block";
-      btnSalvar.style.display = "none";
-      btnCancelar.style.display = "none";
-      mensagemBoletim.className = "mensagem-status sucesso";
-      mensagemBoletim.textContent = "Dados salvos com sucesso.";
-      renderizarTela();
-    })
-    .catch(function (erro) {
-      mensagemBoletim.className = "mensagem-status erro";
-      mensagemBoletim.textContent = erro.message || "Erro ao salvar alterações. Tente novamente.";
-    });
-});
+  graficoMedias = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Média",
+        data: data,
+        backgroundColor: "#3b82f6",
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          min: 0,
+          max: 10,
+          grid: { color: "#334155" },
+          ticks: {
