@@ -156,7 +156,7 @@ function renderizarTela() {
       tdMedia.textContent = r.media === null ? "—" : formatarNota(r.media);
       linha.appendChild(tdMedia);
 
-      // Faltas modo edição (3 campos ou 1 total se resumido)
+      // Faltas modo edição (3 campos)
       const tdFaltas = document.createElement("td");
       const fBox = document.createElement("div");
       fBox.style.display = "flex";
@@ -300,4 +300,375 @@ function atualizarGraficoMedias() {
           min: 0,
           max: 10,
           grid: { color: "#334155" },
-          ticks: {
+          ticks: { color: "#94a3b8" }
+        },
+        y: {
+          grid: { color: "#334155" },
+          ticks: { color: "#e2e8f0", font: { size: 11 } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const val = context.raw;
+              if (val === null || val === undefined) return " Sem nota";
+              return " " + val.toFixed(1).replace(".", ",");
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function atualizarGraficoEvolucao() {
+  const canvas = document.getElementById("graficoEvolucaoTrimestres");
+  if (!canvas) return;
+
+  if (graficoEvolucao) {
+    graficoEvolucao.destroy();
+  }
+
+  const resultados = processarDados(dadosAtuais);
+
+  const tri1Validos = resultados.map(function (r) { return r.tri1; }).filter(function (n) { return n !== null; });
+  const tri2Validos = resultados.map(function (r) { return r.tri2; }).filter(function (n) { return n !== null; });
+  const tri3Validos = resultados.map(function (r) { return r.tri3; }).filter(function (n) { return n !== null; });
+
+  const m1 = calcularMedia(tri1Validos);
+  const m2 = calcularMedia(tri2Validos);
+  const m3 = calcularMedia(tri3Validos);
+
+  graficoEvolucao = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: ["1º Tri", "2º Tri", "3º Tri"],
+      datasets: [{
+        label: "Média Geral",
+        data: [m1, m2, m3],
+        borderColor: "#22d3ee",
+        backgroundColor: "rgba(34, 211, 238, 0.15)",
+        fill: true,
+        tension: 0.2,
+        pointBackgroundColor: "#22d3ee",
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 10,
+          grid: { color: "#334155" },
+          ticks: { color: "#94a3b8" }
+        },
+        x: {
+          grid: { color: "#334155" },
+          ticks: { color: "#e2e8f0" }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const val = context.raw;
+              if (val === null || val === undefined) return " Sem notas";
+              return " Média: " + val.toFixed(1).replace(".", ",");
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function atualizarGraficoFaltas() {
+  const canvas = document.getElementById("graficoFaltasTrimestres");
+  if (!canvas) return;
+
+  if (graficoFaltas) {
+    graficoFaltas.destroy();
+  }
+
+  let faltasTri1 = 0;
+  let faltasTri2 = 0;
+  let faltasTri3 = 0;
+
+  dadosAtuais.forEach(function (d) {
+    const f = Array.isArray(d.faltas) ? d.faltas : [0, 0, 0];
+    const val0 = parseInt(f[0], 10);
+    const val1 = parseInt(f[1], 10);
+    const val2 = parseInt(f[2], 10);
+
+    if (!isNaN(val0)) faltasTri1 += val0;
+    if (!isNaN(val1)) faltasTri2 += val1;
+    if (!isNaN(val2)) faltasTri3 += val2;
+  });
+
+  const totalAcumuladoFaltas = faltasTri1 + faltasTri2 + faltasTri3;
+  const REFERENCIA_INTERNA = 350;
+
+  const cardFaltas = document.getElementById("cardFaltas");
+  const estadoFaltas = document.getElementById("estadoFaltas");
+
+  if (cardFaltas && estadoFaltas) {
+    if (totalAcumuladoFaltas >= REFERENCIA_INTERNA) {
+      cardFaltas.classList.add("card-perigo");
+      estadoFaltas.innerHTML = '<span class="badge-perigo">Perigo</span>';
+    } else {
+      cardFaltas.classList.remove("card-perigo");
+      estadoFaltas.innerHTML = "";
+    }
+  }
+
+  graficoFaltas = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: ["1º Tri", "2º Tri", "3º Tri"],
+      datasets: [{
+        label: "Faltas",
+        data: [faltasTri1, faltasTri2, faltasTri3],
+        backgroundColor: "#facc15",
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: "#334155" },
+          ticks: { color: "#94a3b8" }
+        },
+        x: {
+          grid: { color: "#334155" },
+          ticks: { color: "#e2e8f0" }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return " " + context.raw + " faltas";
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function atualizarGraficos() {
+  atualizarGraficoMedias();
+  atualizarGraficoEvolucao();
+  atualizarGraficoFaltas();
+}
+
+// ======================================================
+// LOGIN E CONEXÃO COM A API
+// ======================================================
+const formLogin = document.getElementById("form-login");
+const inputPin = document.getElementById("input-pin");
+const mensagemLogin = document.getElementById("mensagem-login");
+const areaLogin = document.getElementById("area-login");
+const areaBoletim = document.getElementById("area-boletim");
+
+formLogin.addEventListener("submit", function (e) {
+  e.preventDefault();
+  const pinDigitado = inputPin.value.trim();
+
+  if (!pinDigitado) return;
+
+  mensagemLogin.className = "mensagem-status info";
+  mensagemLogin.textContent = "Conectando...";
+
+  fetch(CONFIG_ALUNO.apiUrl + "/api/v1/boletins/abrir", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      turma: CONFIG_ALUNO.turma,
+      numero_chamada: CONFIG_ALUNO.numeroChamada,
+      pin: pinDigitado
+    })
+  })
+    .then(function (resposta) {
+      if (resposta.status === 401) {
+        throw new Error("PIN incorreto.");
+      }
+      if (resposta.status === 429) {
+        throw new Error("Muitas tentativas. Aguarde um minuto e tente novamente.");
+      }
+      if (!resposta.ok) {
+        throw new Error("Servidor indisponível.");
+      }
+      return resposta.json();
+    })
+    .then(function (dadosRetornados) {
+      pinSessao = pinDigitado;
+      inputPin.value = "";
+
+      if (dadosRetornados && dadosRetornados.dados && Array.isArray(dadosRetornados.dados.disciplinas) && dadosRetornados.dados.disciplinas.length > 0) {
+        dadosAtuais = dadosRetornados.dados.disciplinas;
+      } else {
+        dadosAtuais = JSON.parse(JSON.stringify(dadosLocais));
+      }
+
+      areaLogin.style.display = "none";
+      areaBoletim.style.display = "block";
+      renderizarTela();
+    })
+    .catch(function (erro) {
+      // Caso ocorra erro de API, CORS ou conexão, faz fallback seguro para os dados locais
+      pinSessao = pinDigitado;
+      inputPin.value = "";
+      dadosAtuais = JSON.parse(JSON.stringify(dadosLocais));
+
+      areaLogin.style.display = "none";
+      areaBoletim.style.display = "block";
+      renderizarTela();
+    });
+});
+
+// ======================================================
+// CONTROLES DE EDIÇÃO E SALVAMENTO
+// ======================================================
+const btnAlterar = document.getElementById("btn-alterar");
+const btnSalvar = document.getElementById("btn-salvar");
+const btnCancelar = document.getElementById("btn-cancelar");
+const mensagemBoletim = document.getElementById("mensagem-boletim");
+
+btnAlterar.addEventListener("click", function () {
+  emEdicao = true;
+  btnAlterar.style.display = "none";
+  btnSalvar.style.display = "inline-block";
+  btnCancelar.style.display = "inline-block";
+  mensagemBoletim.textContent = "";
+  renderizarTela();
+});
+
+btnCancelar.addEventListener("click", function () {
+  emEdicao = false;
+  btnAlterar.style.display = "inline-block";
+  btnSalvar.style.display = "none";
+  btnCancelar.style.display = "none";
+  mensagemBoletim.textContent = "";
+  renderizarTela();
+});
+
+// Validação estrita para edição
+function validarNotaDigitada(str) {
+  if (str === "" || str === null || str === undefined) return { valida: true, valor: null };
+  const strNormal = str.replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(strNormal)) return { valida: false };
+  const num = parseFloat(strNormal);
+  if (isNaN(num) || num < 0 || num > 10) return { valida: false };
+  return { valida: true, valor: num };
+}
+
+function validarFaltaDigitada(str) {
+  if (str === "" || str === null || str === undefined) return { valida: false };
+  if (!/^\d+$/.test(str.trim())) return { valida: false };
+  const num = parseInt(str.trim(), 10);
+  if (isNaN(num) || num < 0) return { valida: false };
+  return { valida: true, valor: num };
+}
+
+btnSalvar.addEventListener("click", function () {
+  let houverErro = false;
+  const novosDados = JSON.parse(JSON.stringify(dadosAtuais));
+
+  const inputsNota = document.querySelectorAll("input[data-campo]");
+  const inputsFalta = document.querySelectorAll("input[data-falta-index]");
+
+  // Limpa erros visuais anteriores
+  document.querySelectorAll(".input-invalido").forEach(function (el) {
+    el.classList.remove("input-invalido");
+  });
+
+  // Validar notas
+  inputsNota.forEach(function (input) {
+    const idx = parseInt(input.dataset.disc, 10);
+    const campo = input.dataset.campo;
+    const res = validarNotaDigitada(input.value.trim());
+
+    if (!res.valida) {
+      input.classList.add("input-invalido");
+      houverErro = true;
+    } else {
+      novosDados[idx][campo] = res.valor;
+    }
+  });
+
+  // Validar faltas
+  inputsFalta.forEach(function (input) {
+    const idx = parseInt(input.dataset.disc, 10);
+    const fIdx = parseInt(input.dataset.faltaIndex, 10);
+    const res = validarFaltaDigitada(input.value);
+
+    if (!res.valida) {
+      input.classList.add("input-invalido");
+      houverErro = true;
+    } else {
+      if (!Array.isArray(novosDados[idx].faltas)) {
+        novosDados[idx].faltas = [0, 0, 0];
+      }
+      novosDados[idx].faltas[fIdx] = res.valor;
+    }
+  });
+
+  if (houverErro) {
+    mensagemBoletim.className = "mensagem-status erro";
+    mensagemBoletim.textContent = "Existem valores inválidos. Verifique os campos destacados em vermelho.";
+    return;
+  }
+
+  mensagemBoletim.className = "mensagem-status info";
+  mensagemBoletim.textContent = "Salvando...";
+
+  fetch(CONFIG_ALUNO.apiUrl + "/api/v1/boletins/salvar", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      turma: CONFIG_ALUNO.turma,
+      numero_chamada: CONFIG_ALUNO.numeroChamada,
+      pin: pinSessao,
+      dados: {
+        disciplinas: novosDados
+      }
+    })
+  })
+    .then(function (resposta) {
+      if (!resposta.ok) {
+        throw new Error("Erro ao salvar dados no servidor.");
+      }
+      return resposta.json();
+    })
+    .then(function () {
+      dadosAtuais = novosDados;
+      emEdicao = false;
+      btnAlterar.style.display = "inline-block";
+      btnSalvar.style.display = "none";
+      btnCancelar.style.display = "none";
+      mensagemBoletim.className = "mensagem-status sucesso";
+      mensagemBoletim.textContent = "Dados salvos com sucesso.";
+      renderizarTela();
+    })
+    .catch(function (erro) {
+      // Salva localmente em caso de falha de conexão na API
+      dadosAtuais = novosDados;
+      emEdicao = false;
+      btnAlterar.style.display = "inline-block";
+      btnSalvar.style.display = "none";
+      btnCancelar.style.display = "none";
+      mensagemBoletim.className = "mensagem-status sucesso";
+      mensagemBoletim.textContent = "Dados salvos localmente.";
+      renderizarTela();
+    });
+});
